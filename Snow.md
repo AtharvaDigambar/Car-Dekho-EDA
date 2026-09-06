@@ -1,29 +1,29 @@
-class ParcelTrackingSystem:
+class CafeteriaOrderSystem:
     def __init__(self):
         self.data = {}
 
-    def add_parcel(self, tracking_id, customer_name, destination, weight):
-        if tracking_id in self.data:
-            raise ValueError("Parcel already exists")
-        self.data[tracking_id] = {
-            "customer_name": customer_name,
-            "destination": destination,
-            "weight": weight,
-            "status": "In Transit"
+    def add_order(self, employee_id, name, meal_type, quantity):
+        if employee_id in self.data:
+            raise ValueError("Order already exists")
+        self.data[employee_id] = {
+            "name": name,
+            "meal_type": meal_type,
+            "quantity": quantity,
+            "status": "Confirmed"
         }
         return self.data
 
-    def update_weight(self, tracking_id, new_weight):
-        if tracking_id not in self.data:
-            raise KeyError("Parcel not found")
-        self.data[tracking_id]["weight"] = new_weight
+    def update_quantity(self, employee_id, new_quantity):
+        if employee_id not in self.data:
+            raise KeyError("Order not found")
+        self.data[employee_id]["quantity"] = new_quantity
         return self.data
 
-    def get_parcel_details(self, tracking_id):
-        if tracking_id not in self.data:
-            raise KeyError("Parcel not found")
-        return self.data[tracking_id]
+    def get_order_details(self, employee_id):
+        if employee_id not in self.data:
+            raise KeyError("Order not found")
+        return self.data[employee_id]
 
-    def get_heavy_parcels(self, minimum_weight):
-        return [tid for tid, info in self.data.items()
-                if info["weight"] >= minimum_weight]
+    def get_bulk_orders(self, minimum_quantity):
+        return [eid for eid, info in self.data.items()
+                if info["quantity"] >= minimum_quantity]
