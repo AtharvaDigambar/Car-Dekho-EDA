@@ -1,29 +1,39 @@
-class CafeteriaOrderSystem:
+class ParkingLotSystem:
+
     def __init__(self):
-        self.data = {}
+        self.vehicles = {}
 
-    def add_order(self, employee_id, name, meal_type, quantity):
-        if employee_id in self.data:
-            raise ValueError("Order already exists")
-        self.data[employee_id] = {
-            "name": name,
-            "meal_type": meal_type,
-            "quantity": quantity,
-            "status": "Confirmed"
+    def add_vehicle(self, vehicle_no: str, owner: str, slot: str) -> dict:
+        if vehicle_no in self.vehicles:
+            raise ValueError("Vehicle already exists")
+
+        self.vehicles[vehicle_no] = {
+            "owner": owner,
+            "slot": slot,
+            "status": "Parked"
         }
-        return self.data
 
-    def update_quantity(self, employee_id, new_quantity):
-        if employee_id not in self.data:
-            raise KeyError("Order not found")
-        self.data[employee_id]["quantity"] = new_quantity
-        return self.data
+        return self.vehicles
 
-    def get_order_details(self, employee_id):
-        if employee_id not in self.data:
-            raise KeyError("Order not found")
-        return self.data[employee_id]
+    def update_slot(self, vehicle_no: str, new_slot: str) -> dict:
+        if vehicle_no not in self.vehicles:
+            raise KeyError("Vehicle not found")
 
-    def get_bulk_orders(self, minimum_quantity):
-        return [eid for eid, info in self.data.items()
-                if info["quantity"] >= minimum_quantity]
+        self.vehicles[vehicle_no]["slot"] = new_slot
+
+        return self.vehicles
+
+    def get_vehicle_details(self, vehicle_no: str) -> dict:
+        if vehicle_no not in self.vehicles:
+            raise KeyError("Vehicle not found")
+
+        return self.vehicles[vehicle_no]
+
+    def vehicles_by_zone(self, zone_prefix: str) -> list:
+        result = []
+
+        for vehicle_no in self.vehicles:
+            if self.vehicles[vehicle_no]["slot"].startswith(zone_prefix):
+                result.append(vehicle_no)
+
+        return result
