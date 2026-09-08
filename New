@@ -1,40 +1,52 @@
-class CafeteriaOrderSystem:
+class WarehouseStockManager:
 
     def __init__(self):
-        self.orders = {}
+        self.stock = {}
 
-    def add_order(self, employee_id, name, meal_type, quantity):
-        if employee_id in self.orders:
-            raise ValueError("Order already exists")
+    # 1. Register a New Item
+    def register_item(self, item_name: str, quantity: int) -> dict:
+        if item_name in self.stock:
+            self.stock[item_name] += quantity
+        else:
+            self.stock[item_name] = quantity
 
-        self.orders[employee_id] = {
-            "name": name,
-            "meal_type": meal_type,
-            "quantity": quantity,
-            "status": "Confirmed"
-        }
+        return self.stock
 
-        return self.orders
+    # 2. Process Bulk Shipment
+    def process_shipment(self, shipment: dict) -> dict:
+        for item, quantity in shipment.items():
 
-    def update_quantity(self, employee_id, new_quantity):
-        if employee_id not in self.orders:
-            raise KeyError("Order not found")
+            # Item exists and has enough stock
+            if item in self.stock and isinstance(self.stock[item], int):
+                if self.stock[item] >= quantity:
+                    self.stock[item] -= quantity
 
-        self.orders[employee_id]["quantity"] = new_quantity
+                    # If stock becomes zero
+                    if self.stock[item] == 0:
+                        self.stock[item] = "Out of Stock"
+                else:
+                    self.stock[item] = "Out of Stock"
 
-        return self.orders
+            # Item does not exist
+            else:
+                self.stock[item] = "Out of Stock"
 
-    def get_order_details(self, employee_id):
-        if employee_id not in self.orders:
-            raise KeyError("Order not found")
+        return self.stock
 
-        return self.orders[employee_id]
+    # 3. Restock Sold-Out Items
+    def restock_items(self, restock_quantity: int) -> dict:
+        for item in self.stock:
+            if self.stock[item] == "Out of Stock":
+                self.stock[item] = restock_quantity
 
-    def get_bulk_orders(self, minimum_quantity):
-        result = []
+        return self.stock
 
-        for employee_id in self.orders:
-            if self.orders[employee_id]["quantity"] >= minimum_quantity:
-                result.append(employee_id)
+    # 4. Generate Low Stock Report
+    def generate_low_stock_report(self, threshold: int) -> dict:
+        low_stock = {}
 
-        return result
+        for item, quantity in self.stock.items():
+            if isinstance(quantity, int) and quantity < threshold:
+                low_stock[item] = quantity
+
+        return low_stock
