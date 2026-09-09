@@ -1,71 +1,99 @@
+import pandas as pd
+import re
+
+
 class AttendanceAnalyzer:
- def create_attendance_df(self, data: list) -> pd.DataFrame:
- return pd.DataFrame(
- data,
- columns=["EmployeeID", "Department", "Date", "Attendance"]
- )
- def compute_monthly_attendance_rate(
- self, df: pd.DataFrame
- ) -> pd.DataFrame:
- result = df.copy()
- # Extract YYYY-MM from the Date string
- result["Month"] = result["Date"].str[:7]
- # Total attendance records
- total = (
- result.groupby(["EmployeeID", "Month"])
- .size()
- .reset_index(name="Total")
- )
- # Present records
- present = (
- result[result["Attendance"] == "Present"]
- .groupby(["EmployeeID", "Month"])
- .size()
- .reset_index(name="Present")
- )
- # Merge total and present counts
- result = total.merge(
- present,
- on=["EmployeeID", "Month"],
- how="left"
- )
- result["Present"] = result["Present"].fillna(0)
- # Attendance rate
- result["Attendance Rate"] = (
- result["Present"] / result["Total"] * 100
- )
- return result[
- ["EmployeeID", "Month", "Attendance Rate"]
- ]
- def add_absence_flag(self, df: pd.DataFrame) -> pd.DataFrame:
- result = df.copy()
- result["IsAbsent"] = (
- result["Attendance"] == "Absent"
- ).astype(int)
- return result
- def high_absentees(
- self, df: pd.DataFrame, threshold: int
- ) -> pd.DataFrame:
- absent = df[df["Attendance"] == "Absent"]
- result = (
- absent.groupby("EmployeeID")
- .size()
- .reset_index(name="Absence Count")
- )
- return result[
- result["Absence Count"] > threshold
- ]
- def department_attendance_summary(
- self, df: pd.DataFrame
- ) -> pd.DataFrame: Page 3
- result = pd.crosstab(
- df["Department"],
- df["Attendance"]
- )
- result = result.reindex(
- columns=["Present", "Absent", "Leave"],
- fill_value=0
- )
- result = result.reset_index()
- result.columns.name = None
- return result
+
+    def create_attendance_df(self, data: list) -> pd.DataFrame:
+        return pd.DataFrame(
+            data,
+            columns=["EmployeeID", "Department", "Date", "Attendance"]
+        )
+
+    def compute_monthly_attendance_rate(
+        self, df: pd.DataFrame
+    ) -> pd.DataFrame:
+
+        result = df.copy()
+
+        # Extract YYYY-MM from the Date string
+        result["Month"] = result["Date"].str[:7]
+
+        # Total attendance records
+        total = (
+            result.groupby(["EmployeeID", "Month"])
+            .size()
+            .reset_index(name="Total")
+        )
+
+        # Present records
+        present = (
+            result[result["Attendance"] == "Present"]
+            .groupby(["EmployeeID", "Month"])
+            .size()
+            .reset_index(name="Present")
+        )
+
+        # Merge total and present counts
+        result = total.merge(
+            present,
+            on=["EmployeeID", "Month"],
+            how="left"
+        )
+
+        result["Present"] = result["Present"].fillna(0)
+
+        # Calculate attendance rate
+        result["Attendance Rate"] = (
+            result["Present"] / result["Total"] * 100
+        )
+
+        return result[
+            ["EmployeeID", "Month", "Attendance Rate"]
+        ]
+
+    def add_absence_flag(self, df: pd.DataFrame) -> pd.DataFrame:
+
+        result = df.copy()
+
+        result["IsAbsent"] = (
+            result["Attendance"] == "Absent"
+        ).astype(int)
+
+        return result
+
+    def high_absentees(
+        self, df: pd.DataFrame, threshold: int
+    ) -> pd.DataFrame:
+
+        absent = df[df["Attendance"] == "Absent"]
+
+        result = (
+            absent.groupby("EmployeeID")
+            .size()
+            .reset_index(name="Absence Count")
+        )
+
+        return result[
+            result["Absence Count"] > threshold
+        ]
+
+    def department_attendance_summary(
+        self, df: pd.DataFrame
+    ) -> pd.DataFrame:
+
+        result = pd.crosstab(
+            df["Department"],
+            df["Attendance"]
+        )
+
+        result = result.reindex(
+            columns=["Present", "Absent", "Leave"],
+            fill_value=0
+        )
+
+        result = result.reset_index()
+
+        result.columns.name = None
+
+        return result
