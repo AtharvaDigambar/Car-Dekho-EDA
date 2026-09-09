@@ -1,52 +1,71 @@
-class WarehouseStockManager:
-
-    def __init__(self):
-        self.stock = {}
-
-    # 1. Register a New Item
-    def register_item(self, item_name: str, quantity: int) -> dict:
-        if item_name in self.stock:
-            self.stock[item_name] += quantity
-        else:
-            self.stock[item_name] = quantity
-
-        return self.stock
-
-    # 2. Process Bulk Shipment
-    def process_shipment(self, shipment: dict) -> dict:
-        for item, quantity in shipment.items():
-
-            # Item exists and has enough stock
-            if item in self.stock and isinstance(self.stock[item], int):
-                if self.stock[item] >= quantity:
-                    self.stock[item] -= quantity
-
-                    # If stock becomes zero
-                    if self.stock[item] == 0:
-                        self.stock[item] = "Out of Stock"
-                else:
-                    self.stock[item] = "Out of Stock"
-
-            # Item does not exist
-            else:
-                self.stock[item] = "Out of Stock"
-
-        return self.stock
-
-    # 3. Restock Sold-Out Items
-    def restock_items(self, restock_quantity: int) -> dict:
-        for item in self.stock:
-            if self.stock[item] == "Out of Stock":
-                self.stock[item] = restock_quantity
-
-        return self.stock
-
-    # 4. Generate Low Stock Report
-    def generate_low_stock_report(self, threshold: int) -> dict:
-        low_stock = {}
-
-        for item, quantity in self.stock.items():
-            if isinstance(quantity, int) and quantity < threshold:
-                low_stock[item] = quantity
-
-        return low_stock
+class AttendanceAnalyzer:
+ def create_attendance_df(self, data: list) -> pd.DataFrame:
+ return pd.DataFrame(
+ data,
+ columns=["EmployeeID", "Department", "Date", "Attendance"]
+ )
+ def compute_monthly_attendance_rate(
+ self, df: pd.DataFrame
+ ) -> pd.DataFrame:
+ result = df.copy()
+ # Extract YYYY-MM from the Date string
+ result["Month"] = result["Date"].str[:7]
+ # Total attendance records
+ total = (
+ result.groupby(["EmployeeID", "Month"])
+ .size()
+ .reset_index(name="Total")
+ )
+ # Present records
+ present = (
+ result[result["Attendance"] == "Present"]
+ .groupby(["EmployeeID", "Month"])
+ .size()
+ .reset_index(name="Present")
+ )
+ # Merge total and present counts
+ result = total.merge(
+ present,
+ on=["EmployeeID", "Month"],
+ how="left"
+ )
+ result["Present"] = result["Present"].fillna(0)
+ # Attendance rate
+ result["Attendance Rate"] = (
+ result["Present"] / result["Total"] * 100
+ )
+ return result[
+ ["EmployeeID", "Month", "Attendance Rate"]
+ ]
+ def add_absence_flag(self, df: pd.DataFrame) -> pd.DataFrame:
+ result = df.copy()
+ result["IsAbsent"] = (
+ result["Attendance"] == "Absent"
+ ).astype(int)
+ return result
+ def high_absentees(
+ self, df: pd.DataFrame, threshold: int
+ ) -> pd.DataFrame:
+ absent = df[df["Attendance"] == "Absent"]
+ result = (
+ absent.groupby("EmployeeID")
+ .size()
+ .reset_index(name="Absence Count")
+ )
+ return result[
+ result["Absence Count"] > threshold
+ ]
+ def department_attendance_summary(
+ self, df: pd.DataFrame
+ ) -> pd.DataFrame: Page 3
+ result = pd.crosstab(
+ df["Department"],
+ df["Attendance"]
+ )
+ result = result.reindex(
+ columns=["Present", "Absent", "Leave"],
+ fill_value=0
+ )
+ result = result.reset_index()
+ result.columns.name = None
+ return result
