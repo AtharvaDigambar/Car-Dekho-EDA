@@ -1,39 +1,26 @@
-class ParkingLotSystem:
-
-    def __init__(self):
-        self.vehicles = {}
-
-    def add_vehicle(self, vehicle_no: str, owner: str, slot: str) -> dict:
-        if vehicle_no in self.vehicles:
-            raise ValueError("Vehicle already exists")
-
-        self.vehicles[vehicle_no] = {
-            "owner": owner,
-            "slot": slot,
-            "status": "Parked"
-        }
-
-        return self.vehicles
-
-    def update_slot(self, vehicle_no: str, new_slot: str) -> dict:
-        if vehicle_no not in self.vehicles:
-            raise KeyError("Vehicle not found")
-
-        self.vehicles[vehicle_no]["slot"] = new_slot
-
-        return self.vehicles
-
-    def get_vehicle_details(self, vehicle_no: str) -> dict:
-        if vehicle_no not in self.vehicles:
-            raise KeyError("Vehicle not found")
-
-        return self.vehicles[vehicle_no]
-
-    def vehicles_by_zone(self, zone_prefix: str) -> list:
-        result = []
-
-        for vehicle_no in self.vehicles:
-            if self.vehicles[vehicle_no]["slot"].startswith(zone_prefix):
-                result.append(vehicle_no)
-
-        return result
+WITH ordered_appointments AS (
+SELECT
+p.patient_name,
+a.appointment_id,
+a.appointment_date,
+LAG(a.appointment_date) OVER (
+PARTITION BY a.patient_id
+ORDER BY a.appointment_date, a.appointment_id
+) AS previous_appointment_date
+FROM Appointments AS a
+JOIN Patients AS p
+ON a.patient_id = p.patient_id
+)
+SELECT
+patient_name,
+appointment_id,
+appointment_date,
+DATEDIFF(
+appointment_date,
+previous_appointment_date
+) AS days_since_previous_appointment
+FROM ordered_appointments
+ORDER BY
+patient_name,
+appointment_date,
+appointment_id;
