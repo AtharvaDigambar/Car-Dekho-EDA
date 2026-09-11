@@ -1,99 +1,122 @@
-import pandas as pd
-import re
+CREATE TABLE Events (
+    event_id INT PRIMARY KEY,
+    event_name VARCHAR(100)
+);
 
+CREATE TABLE Athletes (
+    athlete_id INT PRIMARY KEY,
+    athlete_name VARCHAR(100)
+);
 
-class AttendanceAnalyzer:
+CREATE TABLE Results (
+    result_id INT PRIMARY KEY,
+    event_id INT,
+    athlete_id INT,
+    finish_time DECIMAL(5,2),
+    status VARCHAR(20),
+    FOREIGN KEY (event_id) REFERENCES Events(event_id),
+    FOREIGN KEY (athlete_id) REFERENCES Athletes(athlete_id)
+);
 
-    def create_attendance_df(self, data: list) -> pd.DataFrame:
-        return pd.DataFrame(
-            data,
-            columns=["EmployeeID", "Department", "Date", "Attendance"]
-        )
+-- Events
+INSERT INTO Events VALUES
+(1, '100m Sprint'),
+(2, '200m Sprint');
 
-    def compute_monthly_attendance_rate(
-        self, df: pd.DataFrame
-    ) -> pd.DataFrame:
+-- Athletes
+INSERT INTO Athletes VALUES
+(1, 'Alice'),
+(2, 'Brian'),
+(3, 'Carlos'),
+(4, 'Diana');
 
-        result = df.copy()
+-- Results
+INSERT INTO Results VALUES
+(201, 1, 1, 11.20, 'Recorded'),
+(202, 1, 2, 10.95, 'Recorded'),
+(203, 1, 3, 12.10, 'Recorded'),
+(204, 1, 4, 11.50, 'Disqualified'),
+(205, 2, 1, 22.50, 'Recorded'),
+(206, 2, 2, 21.80, 'Recorded'),
+(207, 2, 3, 21.80, 'Recorded'),
+(208, 2, 4, 23.10, 'DNS');
 
-        # Extract YYYY-MM from the Date string
-        result["Month"] = result["Date"].str[:7]
+SELECT
+    e.event_name,
+    a.athlete_name,
+    r.finish_time,
+    ROUND(
+        AVG(r.finish_time) OVER (PARTITION BY r.event_id),
+        2
+    ) AS avg_event_time
+FROM Results r
+JOIN Events e
+    ON r.event_id = e.event_id
+JOIN Athletes a
+    ON r.athlete_id = a.athlete_id
+WHERE r.status = 'Recorded'
+ORDER BY
+    e.event_name,
+    r.finish_time,
+    a.athlete_name;
+CREATE TABLE Events (
+    event_id INT PRIMARY KEY,
+    event_name VARCHAR(100)
+);
 
-        # Total attendance records
-        total = (
-            result.groupby(["EmployeeID", "Month"])
-            .size()
-            .reset_index(name="Total")
-        )
+CREATE TABLE Athletes (
+    athlete_id INT PRIMARY KEY,
+    athlete_name VARCHAR(100)
+);
 
-        # Present records
-        present = (
-            result[result["Attendance"] == "Present"]
-            .groupby(["EmployeeID", "Month"])
-            .size()
-            .reset_index(name="Present")
-        )
+CREATE TABLE Results (
+    result_id INT PRIMARY KEY,
+    event_id INT,
+    athlete_id INT,
+    finish_time DECIMAL(5,2),
+    status VARCHAR(20),
+    FOREIGN KEY (event_id) REFERENCES Events(event_id),
+    FOREIGN KEY (athlete_id) REFERENCES Athletes(athlete_id)
+);
 
-        # Merge total and present counts
-        result = total.merge(
-            present,
-            on=["EmployeeID", "Month"],
-            how="left"
-        )
+-- Events
+INSERT INTO Events VALUES
+(1, '100m Sprint'),
+(2, '200m Sprint');
 
-        result["Present"] = result["Present"].fillna(0)
+-- Athletes
+INSERT INTO Athletes VALUES
+(1, 'Alice'),
+(2, 'Brian'),
+(3, 'Carlos'),
+(4, 'Diana');
 
-        # Calculate attendance rate
-        result["Attendance Rate"] = (
-            result["Present"] / result["Total"] * 100
-        )
+-- Results
+INSERT INTO Results VALUES
+(201, 1, 1, 11.20, 'Recorded'),
+(202, 1, 2, 10.95, 'Recorded'),
+(203, 1, 3, 12.10, 'Recorded'),
+(204, 1, 4, 11.50, 'Disqualified'),
+(205, 2, 1, 22.50, 'Recorded'),
+(206, 2, 2, 21.80, 'Recorded'),
+(207, 2, 3, 21.80, 'Recorded'),
+(208, 2, 4, 23.10, 'DNS');
 
-        return result[
-            ["EmployeeID", "Month", "Attendance Rate"]
-        ]
-
-    def add_absence_flag(self, df: pd.DataFrame) -> pd.DataFrame:
-
-        result = df.copy()
-
-        result["IsAbsent"] = (
-            result["Attendance"] == "Absent"
-        ).astype(int)
-
-        return result
-
-    def high_absentees(
-        self, df: pd.DataFrame, threshold: int
-    ) -> pd.DataFrame:
-
-        absent = df[df["Attendance"] == "Absent"]
-
-        result = (
-            absent.groupby("EmployeeID")
-            .size()
-            .reset_index(name="Absence Count")
-        )
-
-        return result[
-            result["Absence Count"] > threshold
-        ]
-
-    def department_attendance_summary(
-        self, df: pd.DataFrame
-    ) -> pd.DataFrame:
-
-        result = pd.crosstab(
-            df["Department"],
-            df["Attendance"]
-        )
-
-        result = result.reindex(
-            columns=["Present", "Absent", "Leave"],
-            fill_value=0
-        )
-
-        result = result.reset_index()
-
-        result.columns.name = None
-
-        return result
+SELECT
+    e.event_name,
+    a.athlete_name,
+    r.finish_time,
+    ROUND(
+        AVG(r.finish_time) OVER (PARTITION BY r.event_id),
+        2
+    ) AS avg_event_time
+FROM Results r
+JOIN Events e
+    ON r.event_id = e.event_id
+JOIN Athletes a
+    ON r.athlete_id = a.athlete_id
+WHERE r.status = 'Recorded'
+ORDER BY
+    e.event_name,
+    r.finish_time,
+    a.athlete_name;
