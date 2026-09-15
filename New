@@ -1,0 +1,60 @@
+class VehicleServiceTracker:
+
+    def __init__(self):
+        pass
+
+    # 1. Register a New Customer
+    def register_customer(self, service_data: dict, customer_name: str) -> dict:
+        service_data[customer_name] = {
+            "services": 0,
+            "amount": 0,
+            "status": "New"
+        }
+
+        return service_data
+
+    # 2. Log a Service Visit
+    def log_service(self, service_data: dict, customer_name: str, amount_paid: int) -> dict:
+
+        if customer_name not in service_data:
+            raise KeyError("Error: Customer not found")
+
+        service_data[customer_name]["services"] += 1
+        service_data[customer_name]["amount"] += amount_paid
+
+        if service_data[customer_name]["services"] > 5:
+            service_data[customer_name]["status"] = "Regular"
+
+        return service_data
+
+    # 3. Calculate Average Service Amount
+    def calculate_average_amount(self, service_data: dict, customer_name: str) -> float:
+
+        if customer_name not in service_data or service_data[customer_name]["services"] == 0:
+            raise KeyError("Error: Invalid customer or no services")
+
+        services = service_data[customer_name]["services"]
+        amount = service_data[customer_name]["amount"]
+
+        average = amount / services
+
+        return round(average, 2)
+
+    # 4. Generate Service Report
+    def generate_service_report(self, service_data: dict) -> dict:
+
+        report = {}
+
+        for customer_name in service_data:
+            amount = service_data[customer_name]["amount"]
+
+            if amount < 10000:
+                report[customer_name] = "Basic"
+
+            elif amount <= 50000:
+                report[customer_name] = "Regular"
+
+            else:
+                report[customer_name] = "Premium"
+
+        return report
