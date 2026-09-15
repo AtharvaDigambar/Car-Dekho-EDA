@@ -1,101 +1,60 @@
-import numpy as np
+class VehicleServiceTracker:
 
+    def __init__(self):
+        pass
 
-# 1. Create Orders Array
-def create_orders_array(orders_data: list) -> np.ndarray:
-    return np.array(orders_data, dtype=np.int64)
+    # 1. Register a New Customer
+    def register_customer(self, service_data: dict, customer_name: str) -> dict:
+        service_data[customer_name] = {
+            "services": 0,
+            "amount": 0,
+            "status": "New"
+        }
 
+        return service_data
 
-# 2. Validate Orders Array
-def validate_orders_array(orders_array: np.ndarray) -> bool:
+    # 2. Log a Service Visit
+    def log_service(self, service_data: dict, customer_name: str, amount_paid: int) -> dict:
 
-    if orders_array.size == 0:
-        return False
+        if customer_name not in service_data:
+            raise KeyError("Error: Customer not found")
 
-    if not np.issubdtype(orders_array.dtype, np.number):
-        return False
+        service_data[customer_name]["services"] += 1
+        service_data[customer_name]["amount"] += amount_paid
 
-    if np.any(orders_array < 0):
-        return False
+        if service_data[customer_name]["services"] > 5:
+            service_data[customer_name]["status"] = "Regular"
 
-    return True
+        return service_data
 
+    # 3. Calculate Average Service Amount
+    def calculate_average_amount(self, service_data: dict, customer_name: str) -> float:
 
-# 3. Compute Order Metrics
-def compute_order_metrics(orders_array: np.ndarray) -> tuple:
+        if customer_name not in service_data or service_data[customer_name]["services"] == 0:
+            raise KeyError("Error: Invalid customer or no services")
 
-    total = int(np.sum(orders_array))
-    average = round(float(np.mean(orders_array)), 2)
-    maximum = int(np.max(orders_array))
+        services = service_data[customer_name]["services"]
+        amount = service_data[customer_name]["amount"]
 
-    return total, average, maximum
+        average = amount / services
 
+        return round(average, 2)
 
-# 4. Categorize Order Volume Levels
-def categorize_order_levels(orders_array: np.ndarray) -> np.ndarray:
+    # 4. Generate Service Report
+    def generate_service_report(self, service_data: dict) -> dict:
 
-    result = []
+        report = {}
 
-    for order in orders_array:
-        if order < 300:
-            result.append("Low Volume")
-        elif order < 500:
-            result.append("Moderate Volume")
-        else:
-            result.append("High Volume")
+        for customer_name in service_data:
+            amount = service_data[customer_name]["amount"]
 
-    return np.array(result)
+            if amount < 10000:
+                report[customer_name] = "Basic"
 
+            elif amount <= 50000:
+                report[customer_name] = "Regular"
 
-# 5. Find Longest Growth Streak
-def longest_order_growth_streak(orders_array: np.ndarray) -> int:
+            else:
+                report[customer_name] = "Premium"
 
-    if len(orders_array) == 0:
-        return 0
-
-    max_streak = 1
-    current_streak = 1
-
-    for i in range(1, len(orders_array)):
-
-        if orders_array[i] > orders_array[i - 1]:
-            current_streak += 1
-
-            if current_streak > max_streak:
-                max_streak = current_streak
-        else:
-            current_streak = 1
-
-    return max_streak
-
-
-# 6. Format Order Counts
-def format_order_counts(orders_array: np.ndarray) -> np.ndarray:
-
-    result = []
-
-    for order in orders_array:
-        result.append(f"{order:,}")
-
-    return np.array(result)
-
-
-# -------------------------------
-# Test the functions
-# -------------------------------
-
-orders = create_orders_array([120, 360, 190, 540, 780])
-
-print("Orders Array:", orders)
-
-print("Validation:", validate_orders_array(orders))
-
-print("Metrics:", compute_order_metrics(orders))
-
-print("Order Levels:", categorize_order_levels(orders))
-
-print("Longest Growth Streak:",
-      longest_order_growth_streak(orders))
-
-print("Formatted Orders:",
-      format_order_counts(orders))
+        return report
