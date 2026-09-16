@@ -1,132 +1,109 @@
 -- Create Database
-CREATE DATABASE hotel_booking;
+CREATE DATABASE retail_orders;
 
--- Select Database
-USE hotel_booking;
+-- Use Database
+USE retail_orders;
 
 
 -- =========================================
--- 1. Create Sections Table
+-- 1. Create Categories Table
 -- =========================================
 
-CREATE TABLE Sections (
-    section_id INT PRIMARY KEY,
-    section_name VARCHAR(100) NOT NULL
+CREATE TABLE Categories (
+    category_id INT PRIMARY KEY,
+    category_name VARCHAR(50) NOT NULL
 );
 
 
 -- =========================================
--- 2. Create Rooms Table
+-- 2. Create Customers Table
 -- =========================================
 
-CREATE TABLE Rooms (
-    room_id INT PRIMARY KEY,
-    room_number VARCHAR(10) NOT NULL,
-    room_type VARCHAR(50),
-    section_id INT,
-    FOREIGN KEY (section_id) REFERENCES Sections(section_id)
-);
-
-
--- =========================================
--- 3. Create Guests Table
--- =========================================
-
-CREATE TABLE Guests (
-    guest_id INT PRIMARY KEY,
+CREATE TABLE Customers (
+    customer_id INT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     age INT,
-    phone VARCHAR(15)
+    category_id INT,
+    FOREIGN KEY (category_id) REFERENCES Categories(category_id)
 );
 
 
 -- =========================================
--- 4. Create Bookings Table
+-- 3. Create Products Table
 -- =========================================
 
-CREATE TABLE Bookings (
-    booking_id INT PRIMARY KEY,
-    guest_id INT,
-    room_id INT,
-    booking_date DATE NOT NULL,
-    status VARCHAR(20) DEFAULT 'Booked',
-    FOREIGN KEY (guest_id) REFERENCES Guests(guest_id),
-    FOREIGN KEY (room_id) REFERENCES Rooms(room_id)
+CREATE TABLE Products (
+    product_id VARCHAR(10) PRIMARY KEY,
+    product_name VARCHAR(100) NOT NULL,
+    category_id INT,
+    FOREIGN KEY (category_id) REFERENCES Categories(category_id)
 );
 
 
 -- =========================================
--- Insert Data into Sections
+-- 4. Create Orders Table
 -- =========================================
 
-INSERT INTO Sections (section_id, section_name)
+CREATE TABLE Orders (
+    customer_id INT,
+    product_id VARCHAR(10),
+    quantity INT,
+    PRIMARY KEY (customer_id, product_id),
+    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
+    FOREIGN KEY (product_id) REFERENCES Products(product_id)
+);
+
+
+-- =========================================
+-- Insert Categories
+-- =========================================
+
+INSERT INTO Categories (category_id, category_name)
 VALUES
-(1, 'Business Wing'),
-(2, 'Executive Wing'),
-(3, 'Family Wing'),
-(4, 'Heritage Wing');
+(1, 'Electronics'),
+(2, 'Books'),
+(3, 'Home'),
+(4, 'Sports');
 
 
 -- =========================================
--- Insert Data into Rooms
+-- Insert Customers
 -- =========================================
 
-INSERT INTO Rooms (room_id, room_number, room_type, section_id)
+INSERT INTO Customers (customer_id, name, age, category_id)
 VALUES
-(201, 'B201', 'Deluxe', 1),
-(202, 'E202', 'Executive', 2),
-(203, 'F203', 'Family', 3),
-(204, 'H204', 'Suite', 4);
+(101, 'Aarav Mehta', 24, 1),
+(102, 'Bhavna Rao', 29, 2),
+(103, 'Chirag Shah', 31, 3),
+(104, 'Diya Kumar', 27, 1);
 
 
 -- =========================================
--- Insert Data into Guests
+-- Insert Products
 -- =========================================
 
-INSERT INTO Guests (guest_id, name, age, phone)
+INSERT INTO Products (product_id, product_name, category_id)
 VALUES
-(601, 'Riya Verma', 30, '9876543210'),
-(602, 'Karan Shah', 45, '8765432109'),
-(603, 'Meera Joshi', 27, '7654321098'),
-(604, 'Manish Agarwal', 38, '6543210987');
+('P101', 'Wireless Mouse', 1),
+('P102', 'Python Basics', 2),
+('P103', 'Table Lamp', 3),
+('P104', 'Yoga Mat', 4);
 
 
 -- =========================================
--- Insert Data into Bookings
+-- Insert Orders
 -- =========================================
 
-INSERT INTO Bookings
-    (booking_id, guest_id, room_id, booking_date, status)
+INSERT INTO Orders (customer_id, product_id, quantity)
 VALUES
-(701, 601, 201, '2026-08-01', 'Completed'),
-(702, 602, 202, '2026-08-03', 'Cancelled'),
-(703, 603, 203, '2026-08-04', 'Completed'),
-(704, 604, 204, '2026-08-05', 'Booked'),
-(705, 601, 202, '2026-08-06', 'Completed'),
-(706, 602, 203, '2026-08-07', 'Completed'),
-(707, 603, 204, '2026-08-08', 'Completed'),
-(708, 604, 201, '2026-08-09', 'Booked'),
-(709, 601, 203, '2026-08-10', 'Completed'),
-(710, 602, 204, '2026-08-11', 'Completed'),
-(711, 603, 201, '2026-08-12', 'Cancelled'),
-(712, 604, 202, '2026-08-13', 'Completed');
-
-
--- =========================================
--- Required Report Query
--- =========================================
-
-SELECT
-    b.booking_id,
-    b.booking_date,
-    b.status,
-    g.name AS guest_name,
-    r.room_number,
-    s.section_name
-FROM Bookings b
-JOIN Guests g
-    ON b.guest_id = g.guest_id
-JOIN Rooms r
-    ON b.room_id = r.room_id
-JOIN Sections s
-    ON r.section_id = s.section_id;
+(101, 'P101', 2),
+(101, 'P102', 1),
+(101, 'P103', 3),
+(102, 'P102', 2),
+(102, 'P103', 1),
+(103, 'P103', 2),
+(103, 'P104', 1),
+(104, 'P101', 1),
+(104, 'P102', 2),
+(104, 'P103', 1),
+(104, 'P104', 3);
