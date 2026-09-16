@@ -1,62 +1,202 @@
-class FitnessTracker:
+OOPS Easy : Supply Chain Inventory Tracker
+Problem Statement 
+You are building a Supply Chain Inventory Tracker for a retail chain. Each product in the supply chain has: 
 
-    def __init__(self):
-        pass
+•	Key → Product ID (String, unique) 
+•	Value → Units in stock (Integer) 
+The system manages the inflow and outflow of goods and offers utilities to manage restocking and listing items in stock. 
+ 
+Class Declaration 
+class SupplyChainInventory: 
+  
+The __init__ Method  
+def __init__(self): 
+   self.inv = {} 
+Initializes an empty dictionary to maintain the product Inventory
 
-    # 1. Register a New User
-    def register_user(self, fitness_data: dict, user_name: str) -> dict:
+Operations (Methods) 
+1. Add Product Stock  
+Function Prototype: 
+def add_product(self, product_id: str, quantity: int) -> dict:  
+Example Input:
+add_product({}, "ProductB", 10)
+Expected Output:
+{'ProductB': 10}
+Implementation Flow:
+•	If the product ID already exists, increase its quantity 
+•	Otherwise, create a new entry. 
+•	Return the updated dictionary. 
 
-        fitness_data[user_name] = {
-            "workouts": 0,
-            "calories": 0,
-            "status": "Inactive"
-        }
+2. Fulfill Order 
+ For the given input quantity the function shall fulfill order that is deplete existing stock by input quantity.
+ 
+Function Prototype: 
+def fulfill_order(self, product_id: str, quantity: int) -> dict: 
+Example Input:
+fulfill_order({}, "ProductB", 6)
+Expected Output:
+{'ProductB': 4}
+Implementation Flow:
+•	Check if the existing Product Quantity is less than the input quantity, return an error - raise ValueError (Insufficient Stock)
+•	Update the Product quantity. by substraction
+•	Return the updated dictionary.
 
-        return fitness_data
+3. Restock Return 
+ For the return items update the dictionary by adding quantity again.
+ Function Prototype:
+def restock_return(self, product_id: str, quantity: int) -> dict: 
+Example Input:
+restock_return({'ProductB': 20}, "ProductC", 5)
+Expected Output:
+{'ProductC': 5}
+Implementation Flow:
+•	If the product ID already exists, increase its quantity 
+•	Otherwise, create a new entry. 
+•	Return the updated dictionary. 
 
-    # 2. Log a Workout Session
-    def log_workout(self, fitness_data: dict, user_name: str, calories_burned: int) -> dict:
+4. List Available Stock 
+ Function Prototype:
+def list_available_products(self) -> list: 
+Example Input:
+list_available_products({'ProductB': 15, 'ProductC': 25})
+Expected Output:
+['ProductB', 'ProductC']
+Implementation Flow:
+•	Return list of product_ids with stock > 0. 
 
-        if user_name not in fitness_data:
-            raise KeyError("Error: User not found")
+OOPS Easy: Event Registration Tracker
 
-        fitness_data[user_name]["workouts"] += 1
-        fitness_data[user_name]["calories"] += calories_burned
+You are designing an Event Registration Tracker for a conference management system. Each event tracks how many participants are registered. 
 
-        if fitness_data[user_name]["workouts"] > 5:
-            fitness_data[user_name]["status"] = "Active"
+Each entry has: 
+•	Key → event_id (String, unique) 
+•	Value → Number of registered participants (Integer) 
+•	
+Class Declaration
+class EventRegistrationTracker: 
+Follow recommendations -
+def __init__(self):
+self.events={} 
 
-        return fitness_data
+Methods Required 
+1.	Register participant
+Function Prototype: 
+def register_participant(self, event_id: str, count: int) -> dict 
+Example Input:
+register_participant({}, "Gaming", 10)
+Expected Output:
+{'Gaming': 10}
+Implementation Flow:
+•	Check if the event already exists; if so, increase the count
+•	Otherwise, add the event to the dictionary.
+•	Return the updated dictionary 
+  
+2. cancel_participant(event_id: str, count: int) -> dict 
 
-    # 3. Calculate Average Calories
-    def calculate_average_calories(self, fitness_data: dict, user_name: str) -> float:
+Function Prototype:
+def cancel_participant(self, event_id: str, count: int) -> dict 
+Example Input:
+cancel_participant({'Gaming': 20}, "Gaming", 5)
+Expected Output:
+{'Gaming': 15}
+Implementation Flow:
+•	Check if the event doesn't exists;or the number of participants registered for the event are less than the number of participants to cancel; return an error - raise ValueError (Cannot cancel more participants than registered)
+•	Update the events registration by subtraction of count
+•	Return the updated dictionary.
+  
+3. reschedule_event(old_event_id: str, new_event_id: str) -> dict 
 
-        if user_name not in fitness_data or fitness_data[user_name]["workouts"] == 0:
-            raise KeyError("Error: Invalid user or no workouts")
+Function Prototype:
+def reschedule_event(self, old_event_id: str, new_event_id: str) -> dict 
+Example Input:
+reschedule_event({'Gaming': 20}, "Trekking", 5)
+Expected Output:
+{'Trekking': 25}
+Implementation Flow:
+•	If old event id is not in the events dictionary return the existing dictionary
+•	Set count = old event id value in events dictionary
+•	If new event id is in events dictionary, update new event value by addition of count
+•	else set new event id value as count.
+•	delete old event id
+•	Return the updated dictionary
+  
+4. get_active_events() -> list 
+•	Return event_ids where participant count > 0 
+•	Return list of strings 
 
-        workouts = fitness_data[user_name]["workouts"]
-        calories = fitness_data[user_name]["calories"]
+Function Prototype:
+def get_active_events(self) -> list 
+Example Input:
+get_active_events({'Gaming': 15, 'Trekking': 25})
+Expected Output:
+['Gaming', 'Trekking']
+Implementation Flow:
+•	Iterate over the dictionary and include only events with count > 0.
+•	Return a list of available events
 
-        average = calories / workouts
+OOPS Easy: Smart City Traffic Control System
+Problem Statement
+The Smart City Traffic Control System monitors and manages traffic flow at multiple intersections. Each intersection has:
+•	Key → Intersection Name
+•	Value → Vehicle Count
+The system supports:
+•	Adding intersections
+•	Updating vehicle counts
+•	Identifying congested areas
+•	Dynamically adjusting traffic signals
+Class Creation
+Create the class with following instructions
+class TrafficControlSystem
+follow the following recommendation
+def __init__(self:):
+self.traffic_data = {}
+Operations
+1. Add a New Intersection
+Registers a new intersection with its initial vehicle count.
+Function Prototype:
+def add_intersection(self, intersection: str, vehicle_count: int) -> dict:
+Example Input:
+add_intersection({}, "5th Avenue & Main St", 20)
+Expected Output:
+{'5th Avenue & Main St': 20}
+Implementation Flow:
+•	Insert intresection as key and vehicle count as value
+•	Return the updated dictionary.
+2. Update Vehicle Count
+Modifies the vehicle count at a specified intersection.
+Function Prototype:
+def update_vehicle_count(self, intersection: str, new_count: int) -> dict:
+Example Input:
+update_vehicle_count({'5th Avenue & Main St': 20}, "5th Avenue & Main St", 35)
+Expected Output:
+{'5th Avenue & Main St': 35}
+Implementation Flow:
+•	If intersection is not found in traffic data dictionary return error as "Error: Intersection not found"
+•	Otherwise update intersection with new count input
+•	Return updated traffic dictionary
+3. Identify Congested Intersections
+Finds intersections where vehicle count exceeds a given threshold.
+Function Prototype:
+def get_congested_intersections(self, congestion_threshold: int) -> dict:
+Example Input:
+get_congested_intersections({'5th Avenue & Main St': 35, 'Broadway & 1st St': 10}, 30)
+Expected Output:
+{'5th Avenue & Main St': 35}
+Implementation Flow:
+•	For intersection with vehicle count > congestion threshold, return intersection and vehicle count entry as dictionary
+4. Adjust Traffic Signals Based on Congestion
+Dynamically adjusts signal timing based on congestion levels.
+Function Prototype:
+def adjust_traffic_signals(self) -> dict:
+Example Input:
+adjust_traffic_signals({'5th Avenue & Main St': 85, 'Broadway & 1st St': 50, 'Central Square': 25})
+Expected Output:
+{'5th Avenue & Main St': 'Long Green', 'Broadway & 1st St': 'Normal Green', 'Central Square': 'Short Green'}
+Implementation Flow:
+•	Declare empty dictionary
+•	Use intersection as keys and for values :
+•	For count>80 "Long Green"
+•	For 40-80 "Normal Green"
+•	Otherwise "Short Green"
+•	Return updated traffic dictionary
 
-        return round(average, 2)
-
-    # 4. Generate Progress Report
-    def generate_progress_report(self, fitness_data: dict) -> dict:
-
-        report = {}
-
-        for user_name in fitness_data:
-
-            calories = fitness_data[user_name]["calories"]
-
-            if calories < 1000:
-                report[user_name] = "Beginner"
-
-            elif calories < 5000:
-                report[user_name] = "Intermediate"
-
-            else:
-                report[user_name] = "Advanced"
-
-        return report
