@@ -1,109 +1,175 @@
--- Create Database
-CREATE DATABASE retail_orders;
-
--- Use Database
-USE retail_orders;
-
-
--- =========================================
--- 1. Create Categories Table
--- =========================================
-
-CREATE TABLE Categories (
-    category_id INT PRIMARY KEY,
-    category_name VARCHAR(50) NOT NULL
-);
+SELECT
+    event_name,
+    athlete_name,
+    finish_time,
+    ROW_NUMBER() OVER (
+        PARTITION BY event_name
+        ORDER BY finish_time, athlete_name
+    ) AS rank_in_event
+FROM Results
+WHERE status = 'Recorded';
 
 
--- =========================================
--- 2. Create Customers Table
--- =========================================
-
-CREATE TABLE Customers (
-    customer_id INT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    age INT,
-    category_id INT,
-    FOREIGN KEY (category_id) REFERENCES Categories(category_id)
-);
+SELECT
+    status,
+    COUNT(*) AS status_count
+FROM Orders
+GROUP BY status
+ORDER BY status_count DESC, status ASC
+LIMIT 1;
 
 
--- =========================================
--- 3. Create Products Table
--- =========================================
 
-CREATE TABLE Products (
-    product_id VARCHAR(10) PRIMARY KEY,
-    product_name VARCHAR(100) NOT NULL,
-    category_id INT,
-    FOREIGN KEY (category_id) REFERENCES Categories(category_id)
-);
+class InventoryManagementSystem:
 
+    def add_item(self, item_name: str, quantity: int) -> dict:
+        if item_name in self:
+            self[item_name] += quantity
+        else:
+            self[item_name] = quantity
+        return self
 
--- =========================================
--- 4. Create Orders Table
--- =========================================
+    def update_stock(self, item_name: str, new_quantity: int) -> dict:
+        if item_name not in self:
+            raise KeyError("Not found")
+        self[item_name] = new_quantity
+        return self
 
-CREATE TABLE Orders (
-    customer_id INT,
-    product_id VARCHAR(10),
-    quantity INT,
-    PRIMARY KEY (customer_id, product_id),
-    FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
-    FOREIGN KEY (product_id) REFERENCES Products(product_id)
-);
+    def get_item_stock(self, item_name: str) -> int:
+        if item_name not in self:
+            raise KeyError("Not found")
+        return self[item_name]
 
-
--- =========================================
--- Insert Categories
--- =========================================
-
-INSERT INTO Categories (category_id, category_name)
-VALUES
-(1, 'Electronics'),
-(2, 'Books'),
-(3, 'Home'),
-(4, 'Sports');
+    def get_available_items(self) -> list:
+        result = []
+        for item, quantity in self.items():
+            if quantity > 0:
+                result.append(item)
+        return result
 
 
--- =========================================
--- Insert Customers
--- =========================================
 
-INSERT INTO Customers (customer_id, name, age, category_id)
-VALUES
-(101, 'Aarav Mehta', 24, 1),
-(102, 'Bhavna Rao', 29, 2),
-(103, 'Chirag Shah', 31, 3),
-(104, 'Diya Kumar', 27, 1);
+class FlightDelayAnalyzer:
+
+    def create_flight_log_df(self, flight_log: list) -> pd.DataFrame:
+        return pd.DataFrame(
+            flight_log,
+            columns=["FlightID", "AirlineCode", "Route", "Delay"]
+        )
+
+    def create_airline_master_df(self, airline_master: list) -> pd.DataFrame:
+        return pd.DataFrame(
+            airline_master,
+            columns=["AirlineCode", "AirlineName"]
+        )
+
+    def merge_airline_names(
+        self,
+        flight_log_df: pd.DataFrame,
+        airline_master_df: pd.DataFrame
+    ) -> pd.DataFrame:
+        return flight_log_df.merge(
+            airline_master_df,
+            on="AirlineCode",
+            how="left"
+        )
+
+    def average_delay_by_airline(self, merged_df: pd.DataFrame) -> pd.DataFrame:
+        return (
+            merged_df.groupby("AirlineName")["Delay"]
+            .mean()
+            .reset_index()
+            .rename(columns={"Delay": "Average Delay"})
+        )
+
+    def filter_high_delays(
+        self,
+        flight_log_df: pd.DataFrame,
+        threshold: int
+    ) -> pd.DataFrame:
+        return flight_log_df[flight_log_df["Delay"] > threshold]
+
+    def most_delayed_route(self, flight_log_df: pd.DataFrame) -> pd.DataFrame:
+        result = (
+            flight_log_df.groupby("Route")["Delay"]
+            .mean()
+            .reset_index()
+            .rename(columns={"Delay": "Average Delay"})
+        )
+
+        return (
+            result.sort_values("Average Delay", ascending=False)
+            .head(1)
+            .reset_index(drop=True)
+        )
 
 
--- =========================================
--- Insert Products
--- =========================================
 
-INSERT INTO Products (product_id, product_name, category_id)
-VALUES
-('P101', 'Wireless Mouse', 1),
-('P102', 'Python Basics', 2),
-('P103', 'Table Lamp', 3),
-('P104', 'Yoga Mat', 4);
+class EmployeePerformanceAnalyzer:
 
+    def create_performance_array(self, scores_array: list) -> np.ndarray:
+        return np.array(scores_array, dtype=int)
 
--- =========================================
--- Insert Orders
--- =========================================
+    def validate_scores(self, performance_array: np.ndarray) -> bool:
+        if performance_array.size == 0:
+            return False
 
-INSERT INTO Orders (customer_id, product_id, quantity)
-VALUES
-(101, 'P101', 2),
-(101, 'P102', 1),
-(101, 'P103', 3),
-(102, 'P102', 2),
-(102, 'P103', 1),
-(103, 'P103', 2),
-(103, 'P104', 1),
-(104, 'P101', 1),
-(104, 'P102', 2),
-(104, 'P103', 1),
-(104, 'P104', 3);
+        if np.any(performance_array < 0) or np.any(performance_array > 100):
+            return False
+
+        return True
+
+    def compute_performance_summary(
+        self,
+        performance_array: np.ndarray
+    ) -> tuple:
+        performance_array = np.array(performance_array, dtype=float)
+
+        total = np.sum(performance_array)
+        average = round(np.mean(performance_array), 1)
+        maximum = np.max(performance_array)
+
+        return (total, average, maximum)
+
+    def apply_bonus(self, performance_array: np.ndarray) -> np.ndarray:
+        result = performance_array.astype(float)
+
+        mask = result > 85
+        result[mask] = result[mask] * 1.05
+
+        result = np.clip(result, 0, 100)
+        return np.round(result, 1)
+
+    def categorize_employees(
+        self,
+        performance_array: np.ndarray
+    ) -> np.ndarray:
+        result = []
+
+        for score in performance_array:
+            if score >= 90:
+                result.append("Excellent")
+            elif score >= 80:
+                result.append("Good")
+            else:
+                result.append("Needs Improvement")
+
+        return np.array(result)
+
+    def format_scores_with_grades(
+        self,
+        performance_array: np.ndarray
+    ) -> np.ndarray:
+        result = []
+
+        for score in performance_array:
+            if score >= 90:
+                result.append("A")
+            elif score >= 80:
+                result.append("B")
+            elif score >= 70:
+                result.append("C")
+            else:
+                result.append("D")
+
+        return np.array(result)
