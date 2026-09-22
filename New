@@ -1,175 +1,101 @@
-SELECT
-    event_name,
-    athlete_name,
-    finish_time,
-    ROW_NUMBER() OVER (
-        PARTITION BY event_name
-        ORDER BY finish_time, athlete_name
-    ) AS rank_in_event
-FROM Results
-WHERE status = 'Recorded';
+from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql.functions import (
+    col,
+    when,
+    sum as spark_sum,
+    to_date
+)
 
 
-SELECT
-    status,
-    COUNT(*) AS status_count
-FROM Orders
-GROUP BY status
-ORDER BY status_count DESC, status ASC
-LIMIT 1;
+# 1. Load Booking Data
+def load_bookings_data(spark: SparkSession, path: str) -> DataFrame:
+    df = (
+        spark.read
+        .option("header", True)
+        .option("inferSchema", True)
+        .csv(path)
+    )
+
+    df = df.withColumn(
+        "show_date",
+        to_date(col("show_date"))
+    )
+
+    return df
 
 
+# 2. Load Movie Reference Data
+def load_movie_info(spark: SparkSession, path: str) -> DataFrame:
+    df = (
+        spark.read
+        .option("header", True)
+        .option("inferSchema", True)
+        .csv(path)
+    )
 
-class InventoryManagementSystem:
-
-    def add_item(self, item_name: str, quantity: int) -> dict:
-        if item_name in self:
-            self[item_name] += quantity
-        else:
-            self[item_name] = quantity
-        return self
-
-    def update_stock(self, item_name: str, new_quantity: int) -> dict:
-        if item_name not in self:
-            raise KeyError("Not found")
-        self[item_name] = new_quantity
-        return self
-
-    def get_item_stock(self, item_name: str) -> int:
-        if item_name not in self:
-            raise KeyError("Not found")
-        return self[item_name]
-
-    def get_available_items(self) -> list:
-        result = []
-        for item, quantity in self.items():
-            if quantity > 0:
-                result.append(item)
-        return result
+    return df
 
 
+# 3. Filter Valid Bookings
+def filter_valid_bookings(df: DataFrame) -> DataFrame:
+    return df.filter(
+        (col("seats_booked") >= 0) &
+        (col("show_duration_min") >= 0)
+    )
 
-class FlightDelayAnalyzer:
 
-    def create_flight_log_df(self, flight_log: list) -> pd.DataFrame:
-        return pd.DataFrame(
-            flight_log,
-            columns=["FlightID", "AirlineCode", "Route", "Delay"]
+# 4. Add Overbooking Breach Flag
+def with_overbooking_flag(df: DataFrame) -> DataFrame:
+    return df.withColumn(
+        "overbooked",
+        when(
+            col("seats_booked") > col("total_seats"),
+            1
+        ).otherwise(0)
+    )
+
+
+# 5. Join Movie Metadata
+def join_movie_info(
+    bookings_df: DataFrame,
+    info_df: DataFrame
+) -> DataFrame:
+
+    return bookings_df.join(
+        info_df,
+        on="movie_id",
+        how="left"
+    )
+
+
+# 6. Movie Occupancy Efficiency
+def movie_occupancy_efficiency(df: DataFrame) -> str:
+
+    grouped_df = (
+        df.groupBy(
+            "movie_id",
+            "total_seats"
         )
-
-    def create_airline_master_df(self, airline_master: list) -> pd.DataFrame:
-        return pd.DataFrame(
-            airline_master,
-            columns=["AirlineCode", "AirlineName"]
+        .agg(
+            spark_sum("seats_booked").alias("total_booked")
         )
+    )
 
-    def merge_airline_names(
-        self,
-        flight_log_df: pd.DataFrame,
-        airline_master_df: pd.DataFrame
-    ) -> pd.DataFrame:
-        return flight_log_df.merge(
-            airline_master_df,
-            on="AirlineCode",
-            how="left"
+    efficiency_df = grouped_df.withColumn(
+        "efficiency",
+        when(
+            col("total_seats") == 0,
+            0.0
+        ).otherwise(
+            col("total_booked") / col("total_seats")
         )
+    )
 
-    def average_delay_by_airline(self, merged_df: pd.DataFrame) -> pd.DataFrame:
-        return (
-            merged_df.groupby("AirlineName")["Delay"]
-            .mean()
-            .reset_index()
-            .rename(columns={"Delay": "Average Delay"})
-        )
+    result = (
+        efficiency_df
+        .orderBy(col("efficiency").desc())
+        .select("movie_id")
+        .first()
+    )
 
-    def filter_high_delays(
-        self,
-        flight_log_df: pd.DataFrame,
-        threshold: int
-    ) -> pd.DataFrame:
-        return flight_log_df[flight_log_df["Delay"] > threshold]
-
-    def most_delayed_route(self, flight_log_df: pd.DataFrame) -> pd.DataFrame:
-        result = (
-            flight_log_df.groupby("Route")["Delay"]
-            .mean()
-            .reset_index()
-            .rename(columns={"Delay": "Average Delay"})
-        )
-
-        return (
-            result.sort_values("Average Delay", ascending=False)
-            .head(1)
-            .reset_index(drop=True)
-        )
-
-
-
-class EmployeePerformanceAnalyzer:
-
-    def create_performance_array(self, scores_array: list) -> np.ndarray:
-        return np.array(scores_array, dtype=int)
-
-    def validate_scores(self, performance_array: np.ndarray) -> bool:
-        if performance_array.size == 0:
-            return False
-
-        if np.any(performance_array < 0) or np.any(performance_array > 100):
-            return False
-
-        return True
-
-    def compute_performance_summary(
-        self,
-        performance_array: np.ndarray
-    ) -> tuple:
-        performance_array = np.array(performance_array, dtype=float)
-
-        total = np.sum(performance_array)
-        average = round(np.mean(performance_array), 1)
-        maximum = np.max(performance_array)
-
-        return (total, average, maximum)
-
-    def apply_bonus(self, performance_array: np.ndarray) -> np.ndarray:
-        result = performance_array.astype(float)
-
-        mask = result > 85
-        result[mask] = result[mask] * 1.05
-
-        result = np.clip(result, 0, 100)
-        return np.round(result, 1)
-
-    def categorize_employees(
-        self,
-        performance_array: np.ndarray
-    ) -> np.ndarray:
-        result = []
-
-        for score in performance_array:
-            if score >= 90:
-                result.append("Excellent")
-            elif score >= 80:
-                result.append("Good")
-            else:
-                result.append("Needs Improvement")
-
-        return np.array(result)
-
-    def format_scores_with_grades(
-        self,
-        performance_array: np.ndarray
-    ) -> np.ndarray:
-        result = []
-
-        for score in performance_array:
-            if score >= 90:
-                result.append("A")
-            elif score >= 80:
-                result.append("B")
-            elif score >= 70:
-                result.append("C")
-            else:
-                result.append("D")
-
-        return np.array(result)
+    return str(result["movie_id"])
