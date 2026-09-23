@@ -3,46 +3,25 @@ from pyspark.sql.functions import col, coalesce, concat_ws
 from pyspark.sql.types import IntegerType
 
 
-# 1. Load Employee and Performance Data
-def load_employee_data(
-    spark: SparkSession,
-    path1: str,
-    path2: str
-) -> tuple[DataFrame, DataFrame]:
+def load_employee_data(spark: SparkSession, path1: str, path2: str):
 
     employees_df = (
         spark.read
-        .option("header", True)
-        .option("inferSchema", True)
-        .csv(path1)
+        .csv(path1, header=True, inferSchema=True)
+        .withColumn("employee_id", col("employee_id").cast(IntegerType()))
     )
 
     performance_df = (
         spark.read
-        .option("header", True)
-        .option("inferSchema", True)
-        .csv(path2)
-    )
-
-    # Ensure employee_id is IntegerType
-    employees_df = employees_df.withColumn(
-        "employee_id",
-        col("employee_id").cast(IntegerType())
-    )
-
-    performance_df = performance_df.withColumn(
-        "employee_id",
-        col("employee_id").cast(IntegerType())
+        .csv(path2, header=True, inferSchema=True)
+        .withColumn("employee_id", col("employee_id").cast(IntegerType()))
     )
 
     return employees_df, performance_df
 
 
-# 2. Join Employee and Performance Data
-def join_employee_data(
-    df1: DataFrame,
-    df2: DataFrame
-) -> DataFrame:
+
+def join_employee_data(df1: DataFrame, df2: DataFrame) -> DataFrame:
 
     joined_df = df1.join(
         df2,
@@ -53,10 +32,10 @@ def join_employee_data(
     return joined_df
 
 
-# 3. Enrich Missing Employee Names
+
 def enrich_employee_name(df: DataFrame) -> DataFrame:
 
-    df = df.withColumn(
+    enriched_df = df.withColumn(
         "full_name",
         coalesce(
             col("full_name"),
@@ -64,19 +43,66 @@ def enrich_employee_name(df: DataFrame) -> DataFrame:
         )
     )
 
-    return df
+    return enriched_df
 
 
-# 4. Find Underperforming Employees
+
+
 def find_underperforming_employees(df: DataFrame) -> DataFrame:
 
-    result_df = (
+    underperforming_df = (
         df.filter(col("rating") == "Poor")
-          .select(
-              "full_name",
-              "department",
-              "rating"
-          )
+          .select("full_name", "department", "rating")
     )
 
-    return result_df
+    return underperforming_df
+
+
+
+spark = (
+    SparkSession.builder
+    .appName("Employee_Performance_Analysis")
+    .master("local[*]")
+    .getOrCreate()
+)
+
+# File paths
+employees_path = "/home/kasm-user/Desktop/pyspark_training/Datasets/Week 6 Day 3 Datcbricks Dataset Employee csv.csv"
+performance_path = "/home/kasm-user/Desktop/pyspark_training/Datasets/Week 6 Day 3 Datcbricks Dataset Performance csv.csv"
+
+# 1. Load data
+employees_df, performance_df = load_employee_data(
+    spark,
+    employees_path,
+    performance_path
+)
+
+print("Employee Data:")
+employees_df.show()
+
+print("Performance Data:")
+performance_df.show()
+
+
+# 2. Join data
+joined_df = join_employee_data(
+    employees_df,
+    performance_df
+)
+
+print("Joined Data:")
+joined_df.show()
+
+
+# 3. Enrich missing names
+enriched_df = enrich_employee_name(joined_df)
+
+print("Enriched Data:")
+enriched_df.show()
+
+
+# 4. Find underperforming employees
+underperforming_df = find_underperforming_employees(enriched_df)
+
+print("Underperforming Employees:")
+underperforming_df.show()
