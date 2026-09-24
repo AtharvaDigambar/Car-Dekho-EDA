@@ -1,108 +1,121 @@
 from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.functions import col, coalesce, concat_ws
+from pyspark.sql.functions import (
+    col,
+    trim,
+    min,
+    max,
+    avg,
+    count,
+    desc,
+    asc
+)
 from pyspark.sql.types import IntegerType
 
 
-def load_employee_data(spark: SparkSession, path1: str, path2: str):
-
-    employees_df = (
+def load_feedback_data(spark: SparkSession, path: str) -> DataFrame:
+    return (
         spark.read
-        .csv(path1, header=True, inferSchema=True)
-        .withColumn("employee_id", col("employee_id").cast(IntegerType()))
+        .option("header", True)
+        .option("inferSchema", True)
+        .csv(path)
     )
 
-    performance_df = (
-        spark.read
-        .csv(path2, header=True, inferSchema=True)
-        .withColumn("employee_id", col("employee_id").cast(IntegerType()))
+
+def clean_missing_and_invalid_emails(df: DataFrame) -> DataFrame:
+    return df.filter(
+        col("email").isNotNull() &
+        (trim(col("email")) != "")
     )
 
-    return employees_df, performance_df
 
-
-
-def join_employee_data(df1: DataFrame, df2: DataFrame) -> DataFrame:
-
-    joined_df = df1.join(
-        df2,
-        on="employee_id",
-        how="inner"
+def compute_rating_stats(df: DataFrame) -> dict:
+    df = df.withColumn(
+        "rating",
+        col("rating").cast(IntegerType())
     )
 
-    return joined_df
+    df = df.filter(col("rating").isNotNull())
 
-
-
-def enrich_employee_name(df: DataFrame) -> DataFrame:
-
-    enriched_df = df.withColumn(
-        "full_name",
-        coalesce(
-            col("full_name"),
-            concat_ws(" ", col("first_name"), col("last_name"))
+    result = (
+        df.agg(
+            min("rating").alias("min_rating"),
+            max("rating").alias("max_rating"),
+            avg("rating").alias("avg_rating")
         )
+        .collect()[0]
     )
 
-    return enriched_df
+    return {
+        "min_rating": result["min_rating"],
+        "max_rating": result["max_rating"],
+        "avg_rating": result["avg_rating"]
+    }
+
+
+def count_ratings(df: DataFrame) -> int:
+    return df.filter(
+        col("rating").isNotNull()
+    ).count()
 
 
 
-
-def find_underperforming_employees(df: DataFrame) -> DataFrame:
-
-    underperforming_df = (
-        df.filter(col("rating") == "Poor")
-          .select("full_name", "department", "rating")
+def most_common_rating(df: DataFrame) -> int:
+    df = df.withColumn(
+        "rating",
+        col("rating").cast(IntegerType())
     )
 
-    return underperforming_df
+    df = df.filter(
+        col("rating").isNotNull() &
+        col("rating").between(1, 5)
+    )
 
+    result = (
+        df.groupBy("rating")
+        .count()
+        .orderBy(
+            desc("count"),
+            asc("rating")
+        )
+        .first()
+    )
+
+    if result is None:
+        return 0
+
+    return result["rating"]
 
 
 spark = (
     SparkSession.builder
-    .appName("Employee_Performance_Analysis")
+    .appName("CustomerFeedbackInsights")
     .master("local[*]")
     .getOrCreate()
 )
 
-# File paths
-employees_path = "/home/kasm-user/Desktop/pyspark_training/Datasets/Week 6 Day 3 Datcbricks Dataset Employee csv.csv"
-performance_path = "/home/kasm-user/Desktop/pyspark_training/Datasets/Week 6 Day 3 Datcbricks Dataset Performance csv.csv"
 
-# 1. Load data
-employees_df, performance_df = load_employee_data(
-    spark,
-    employees_path,
-    performance_path
-)
+path = "data/feedback.csv"
 
-print("Employee Data:")
-employees_df.show()
+df = load_feedback_data(spark, path)
 
-print("Performance Data:")
-performance_df.show()
+df.show()
 
+cleaned_df = clean_missing_and_invalid_emails(df)
 
-# 2. Join data
-joined_df = join_employee_data(
-    employees_df,
-    performance_df
-)
+stats = compute_rating_stats(cleaned_df)
 
-print("Joined Data:")
-joined_df.show()
+total_ratings = count_ratings(cleaned_df)
 
+common_rating = most_common_rating(cleaned_df)
 
-# 3. Enrich missing names
-enriched_df = enrich_employee_name(joined_df)
+print("Cleaned Data:")
+cleaned_df.show()
 
-print("Enriched Data:")
-enriched_df.show()
+print("Rating Statistics:")
+print(stats)
 
+print("Total Valid Ratings:")
+print(total_ratings)
 
-# 4. Find underperforming employees
-underperforming_df = find_underperforming_employees(enriched_df)
-
-print("Underperforming Employees:")
-underperforming_df.show()
+print("Most Common Rating:")
+print(common_rating)
