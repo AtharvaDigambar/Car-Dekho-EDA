@@ -1,0 +1,726 @@
+Q016
+
+EASY 1-BFSI - Digital Banking KYC Risk Insights
+
+Difficulty: Easy
+
+Marks: 10
+
+Duration: 10-15 Minutes
+
+Functions: 5
+
+Tests: 6
+
+Problem Statement
+
+A digital bank maintains customer KYC records containing email addresses, onboarding dates, cities, risk scores, and verification status.
+
+The incoming data may contain invalid contact information, and the compliance team needs basic risk insights for customers requiring manual review.
+
+Implement five independent PySpark functions
+
+Dataset
+
+data/kyc_customers.csv
+
+Columns
+
+customer id
+
+customer name
+
+email
+
+city
+
+onboarding_date
+
+risk_score
+
+kyc_status
+
+Task 1-Load KYC Data
+
+Marks: 2
+
+Function
+
+def load_kyc_data(
+
+spark SparkSession,
+
+path: str
+
+)→ DataFrame:
+
+Requirements
+
+1 Read the CSV with header
+
+2. Infer the schema.
+
+3. Convert onboarding_date to DateType
+
+4 Return the DataFrame
+
+Concepts
+
+read.csv, header, inferSchema, to_date
+
+Task 2-Remove Invalid Email Records
+
+Marks: 2
+
+Function
+
+def remove_invalid_emails(
+
+df DataFrame
+
+)→ DataFrame:
+
+Requirements
+
+1. Remove records where email is null.
+
+2 Apply trim() to the email.
+
+3. Remove blank email values.
+
+4. Keep only emails matching a valid email pattern using rlike()
+
+Example valid values:
+
+asha@example.com
+
+user.name@company.in
+
+Examples to reject:
+
+bad-email
+
+" "
+NULL
+
+Concepts
+
+trim, rlike, isNotNull, filter
+
+Task 3 Filter Customers Requiring Review
+
+Marks: 2
+
+Function
+
+def filter_review_customers(
+
+df DataFrame,
+
+min_score: int,
+
+max_score int
+
+) → DataFrame:
+
+Requirements
+
+Keep customers where:
+
+risk_score is between min_score and max_score inclusive
+
+and
+
+kyc_status is either "PENDING" or "REVIEW"
+
+Concepts
+
+between, isin, compound filters
+
+Task 4-Risk Score Statistics
+
+Marks: 2
+
+Function
+
+def risk_score_statistics(
+
+df DataFrame
+
+) → dict:
+
+Requirements
+
+Ignore null risk scores and return:
+
+{
+
+"min_score":
+
+<minimum>,
+
+"max_score" <maximum>,
+
+"avg_score" <average>,
+
+"total_customers": <count>
+
+}
+
+Concepts
+
+agg, min, max, avg, count, dictionary return
+
+Task 5-City With Highest Average Risk
+
+Marks: 2
+
+Function
+
+def city_highest_average_risk(
+
+df: DataFrame
+
+)→ Tuple [str, float]:
+
+Requirements
+
+1 Ignore rows with null city or null risk score.
+
+2. Group by city.
+
+3. Calculate average risk score.
+
+4. Sort:
+
+average risk descending
+
+city ascending
+
+1. Return:
+
+(city, average_risk)
+
+Tie Rule
+
+Alphabetically first city.
+
+Empty Rule
+
+("", 0.0)
+
+Concepts
+
+groupBy, avg, alias, orderBy, desc, asc, first, tuple return
+
+
+Q17 
+EASY 2-Healthcare - Emergency Triage Wait-Time Insights
+
+Difficulty: Easy
+
+Marks: 10
+
+Duration: 10-15 Minutes
+
+Functions: 5
+
+Tests: 6
+
+
+Problem Statement
+
+An emergency department tracks patient arrival times and doctor-start times.
+
+Your task is to calculate waiting duration, identify priority cases, generate department-level wait statistics, and list active departments.
+
+Task 1-Create Inline Triage Data
+
+Marks: 2
+
+Function
+
+def load_inline_triage_data(
+
+spark. SparkSession
+) -> DataFrame:
+
+Create a DataFrame using spark.createDataFrame() from exactly these rows
+
+C001 | ER
+
+| 2026-09-01 08:00:00 |
+
+2026-09-01 08:25:00 |
+
+High |
+
+ACTIVE
+
+C002 |
+
+Trauma |
+
+2026-09-01 08:10:00 |
+
+2026-09-01 08:05:00
+
+| Critical | ACTIVE
+
+C003 |
+
+Pediatrics |
+
+2026-09-01 09:00:00 |
+
+2026-09-01 09:45:00 | Low
+
+ACTIVE
+
+C004 | ER
+
+| 2026-09-01 09:30:00 |
+
+2026-09-01 10:00:00 |
+
+High |
+
+CLOSED
+
+Columns:
+
+case_id
+
+department
+
+arrival_time
+
+doctor_start_time
+
+priority
+
+status
+
+Concepts
+
+createDataFrame
+
+Task 2- Compute Wait Minutes
+
+Marks: 2
+
+Function
+
+def compute_wait_minutes(
+
+df: DataFrame
+
+) → DataFrame:
+
+Requirements
+
+Calculate:
+
+wait_minutes =
+
+(unix_timestamp(doctor_start_time) -
+
+unix_timestamp(arrival_time)) / 60
+
+If calculated wait is negative:
+
+wait_minutes = 0
+
+Use conditional logic.
+
+Concepts
+
+unix_timestamp, arithmetic, withColumn, when, otherwise
+
+QTask 3- Filter Priority Cases
+
+Marks: 2
+
+Function
+
+def filter_priority_cases(
+
+df DataFrame
+
+)→ DataFrame:
+
+Keep:
+
+priority IN ("Critical", "High")
+
+and:
+
+wait_minutes IS NOT NULL
+
+Concepts
+
+isin, isNotNull, filter
+
+Task 4 Average Wait by Department
+
+Marks: 2
+
+Function
+
+def average_wait_by_department(
+df: DataFrame
+
+) → DataFrame:
+
+Group by
+
+department
+
+Calculate:
+
+AVG(wait_minutes)
+
+Alias:
+
+avg_wait_minutes
+
+Concepts
+
+groupBy, avg, alias
+
+Task 5 - List Active Departments
+
+Marks: 2
+
+Function
+
+def list_active_departments(
+
+df: DataFrame
+
+) → List[str]:
+
+Requirements
+
+1. Filter status == "ACTIVE".
+
+2. Select department.
+
+3. Apply distinct().
+
+4. Sort department ascending.
+
+5. Convert results to a Python list.
+
+The assessment accepts a valid collection approach such as:
+
+.rdd.flatMap(...).collect()
+
+or equivalent PySpark-based extraction.
+
+Concepts
+
+select, distinct, orderBy, collect, list return
+
+Q18
+EASY 3-Life Sciences - Vaccine Batch Stability Insights
+
+Difficulty: Easy
+
+Marks: 10
+
+Duration: 10-15 Minutes
+
+Functions: 5
+
+Tests: 6
+
+Dataset
+
+data/vaccine_batches.csv
+
+Columns:
+
+batch_id
+
+product_name
+
+manufacture_date
+
+expiry_date
+
+potency_pct
+
+release_status
+
+Task 1-Load Vaccine Batches
+
+Marks: 2
+
+def load_vaccine_batches(
+
+spark: SparkSession,
+
+path: str
+
+) → DataFrame:
+
+Convert:
+
+manufacture_date
+
+expiry_date
+
+to DateType.
+
+Concepts
+
+CSV loading, to_date
+
+Task 2- Drop Incomplete Batches
+
+Marks: 2
+
+def drop_incomplete_batches(
+
+df DataFrame
+
+) → DataFrame:
+
+Use dropna() for:
+
+batch_id
+
+product_name
+
+manufacture_date
+
+expiry_date
+
+potency_pct
+
+Concepts
+
+dropna
+
+Task 3- Add Stability Dates
+
+Marks: 2
+
+def add_stability_dates(
+
+df: DataFrame
+
+) → DataFrame:
+
+Create three columns.
+
+shelf_life_days
+
+datediff(expiry_date, manufacture_date)
+
+review_date
+
+manufacture_date + 30 days
+
+using date_add().
+
+days_since_manufacture
+
+datediff (current_date(), manufacture_date)
+
+Concepts
+
+datediff, date_add, current_date, withColumn
+
+Task 4- Filter Potency Range
+
+Marks: 2
+
+def filter_potency_range(
+
+df: DataFrame,
+
+low: float,
+
+high: float
+
+ → DataFrame:
+
+Keep values inclusively between low and high.
+
+Concepts
+
+between
+
+Task 5- Count Release-Ready Batches
+
+Marks: 2
+
+def count_release_ready_batches(
+
+df DataFrame
+
+) → int:
+
+Count records where:
+
+release_status == "RELEASED"
+
+and potency is non-null.
+
+Return a Python integer.
+
+Concepts
+
+filter, isNotNull, DataFrame.count
+
+Q19
+EASY 4-Media - Music Streaming Release Insights
+
+Difficulty: Easy
+
+Marks: 10
+
+Duration: 10-15 Minutes
+
+Functions: 5
+
+Tests: 6
+
+Dataset
+
+data/music_tracks.csv
+
+Columns:
+
+track_id
+
+artist_name
+
+genre
+
+release_date
+
+stream_count
+
+status
+
+Task 1-Load Music Tracks
+
+Marks: 2
+
+def load_music_tracks(
+
+spark. SparkSession,
+
+path: str
+
+)→ DataFrame:
+
+Convert release_date to DateType.
+
+Task 2 - Fill Missing Genre
+
+Marks: 2
+
+def fill_missing_genre(
+
+df DataFrame
+
+)→ DataFrame
+
+Replace:
+
+NULL genre → "Uncategorized"
+
+using fillna()
+
+Task 3 Add Release Calendar
+
+Marks: 2
+
+def add_release_calendar(
+
+df: DataFrame
+
+)→ DataFrame
+
+Add:
+
+release_year
+
+release_month
+
+release_month_start
+
+using
+
+year()
+
+month()
+
+date_trunc("month", )
+
+Task 4- Unique Published Artists
+
+Marks: 2
+
+def unique published artists(
+
+
+df: DataFrame
+
+) → List[str]:
+
+1.
+
+2. Filter status == "Published".
+
+3. Select artist.
+
+4. distinct().
+
+5. Sort ascending.
+
+6. Collect to Python list.
+
+Task 5
+
+Top N Genres by Streams
+
+Marks: 2
+
+def top_n_genres_by_streams(
+
+df: DataFrame,
+
+n: int
+
+) → DataFrame
+
+1.
+
+2. Filter Published tracks.
+
+3. Group by genre.
+
+4. Sum stream_count as total_streams.
+
+5. Sort:
+
+total streams descending
+
+genre ascending
+
+1. Apply limit(n).
+
+Output:
+
+genre
+
+total_streams
+
+Concepts
+
+groupBy, sum, orderBy, limit
